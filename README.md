@@ -26,33 +26,35 @@ This project implements a cloud-based Data Science solution on AWS to help a tel
 7. Final outputs (model metrics, visualizations, predictions) are stored in the S3 `outputs/` bucket.
 
 ## 📁 Repository Structure
+```text
 customer-churn-aws-project/
 ├── README.md
 ├── architecture/
-│ ├── architecture-diagram.png
-│ └── architecture-diagram.drawio
+│   ├── architecture-diagram.png
+│   └── architecture-diagram.drawio
 ├── cloud-infrastructure/
-│ ├── lambda/
-│ │ └── data_validator.py
-│ ├── iam/
-│ │ └── policies.json
-│ └── eventbridge/
-│ └── s3-trigger-rule.json
+│   ├── lambda/
+│   │   └── data_validator.py
+│   ├── iam/
+│   │   └── policies.json
+│   └── eventbridge/
+│       └── s3-trigger-rule.json
 ├── data-science/
-│ ├── 01_eda_and_visualizations.ipynb
-│ ├── 02_data_preprocessing.ipynb
-│ ├── 03_model_training_and_evaluation.ipynb
-│ └── requirements.txt
+│   ├── 01_eda_and_visualizations.ipynb
+│   ├── 02_data_preprocessing.ipynb
+│   ├── 03_model_training_and_evaluation.ipynb
+│   └── requirements.txt
 ├── sql-queries/
-│ ├── 01_churn_rate_by_contract.sql
-│ ├── 02_churn_by_payment_method.sql
-│ ├── 03_avg_tenure_churned_vs_retained.sql
-│ ├── 04_monthly_charges_analysis.sql
-│ └── 05_customer_segment_lifetime_value.sql
+│   ├── 01_churn_rate_by_contract.sql
+│   ├── 02_churn_by_payment_method.sql
+│   ├── 03_avg_tenure_churned_vs_retained.sql
+│   ├── 04_monthly_charges_analysis.sql
+│   └── 05_customer_segment_lifetime_value.sql
 ├── reports/
-│ ├── Technical_Report.pdf
-│ └── Individual_Contribution_Table.pdf
+│   ├── Technical_Report.pdf
+│   └── Individual_Contribution_Table.pdf
 └── .gitignore
+```
 
 
 ## 🛠️ AWS Services Used
