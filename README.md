@@ -57,37 +57,45 @@ customer-churn-aws-project/
 ```
 
 
-## 🛠️ AWS Services Used
-
-| Service | Purpose | Free Tier Eligible |
-|---------|---------|-------------------|
-| Amazon S3 | Store raw, processed, and output data | ✅ Yes (5 GB) |
-| AWS Lambda | Auto-detect and validate new uploads | ✅ Yes (1M requests/month) |
-| Amazon EventBridge | Trigger Lambda on S3 upload events | ✅ Yes |
-| Amazon CloudWatch | Monitor logs and troubleshoot workflows | ✅ Yes (5 GB logs) |
-| Amazon Athena | Run SQL queries on processed S3 data | ✅ Pay-per-query (~$0.005/GB) |
-| Amazon SageMaker | Train and evaluate ML models | ✅ Yes (2 months free, ml.t3.medium) |
-| AWS IAM | Manage access control and security | ✅ Yes (Free) |
-| AWS Budgets | Monitor costs and set billing alerts | ✅ Yes |
-
 ## 🚀 How to Run
-- Install uv 
-- uv sync
-- uv tool install dvc
 
-### Prerequisites
-- An AWS account with Free Tier access
-- Python 3.9+
-- AWS CLI configured (`aws configure`)
+## Environment Setup
 
-### Step 1: Set Up Cloud Infrastructure
-1. Create three S3 buckets (or folders within one bucket): `raw/`, `processed/`, `outputs/`.
-2. Deploy the Lambda function from `cloud-infrastructure/lambda/data_validator.py`.
-3. Configure the EventBridge rule from `cloud-infrastructure/eventbridge/`.
-4. Attach the IAM policies from `cloud-infrastructure/iam/`.
+This project uses [uv](https://docs.astral.sh/uv/) for fast, reproducible Python dependency management.
 
-### Step 2: Run Data Science Notebooks
+### 1. Install uv
+
 ```bash
-cd data-science
-pip install -r requirements.txt
-jupyter notebook
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+*(Windows: `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`)*
+
+Verify the install:
+```bash
+uv --version
+```
+
+### 2. Install dependencies
+
+```bash
+uv sync
+```
+
+This creates a `.venv` and installs everything from `pyproject.toml` / `uv.lock`, including dev dependencies. Activate it with:
+```bash
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+```
+
+### 3. Install DVC (optional)
+
+Only needed if you're pulling/pushing the versioned datasets. Installed as a standalone tool so it doesn't pollute the project's virtual environment.
+
+```bash
+uv tool install "dvc[s3]"
+```
+
+Then pull the tracked data:
+```bash
+dvc pull
+```
