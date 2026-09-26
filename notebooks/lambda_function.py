@@ -25,7 +25,7 @@ import json
 import logging
 import os
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import boto3
 
@@ -55,7 +55,7 @@ def validate_csv(body_bytes):
     Returns (is_valid: bool, report: dict)
     """
     report = {
-        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "checked_at": datetime.now(UTC).isoformat(),
         "row_count": 0,
         "missing_columns": [],
         "missing_value_counts": {},
