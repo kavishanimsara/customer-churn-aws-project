@@ -71,6 +71,9 @@ customer-churn-aws-project/
 | AWS Budgets | Monitor costs and set billing alerts | ✅ Yes |
 
 ## 🚀 How to Run
+- Install uv 
+- uv sync
+- uv tool install dvc
 
 ### Prerequisites
 - An AWS account with Free Tier access
