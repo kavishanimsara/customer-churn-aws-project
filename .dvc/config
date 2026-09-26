@@ -1,0 +1,6 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = s3://churn-project-data/dvc-store
+    endpointurl = http://localhost:4566
+    use_ssl = false
