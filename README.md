@@ -5,12 +5,12 @@ This project implements a cloud-based Data Science solution on AWS to help a tel
 
 ## 👥 Team Members
 
-| Name | Student ID | Role |
-|------|-----------|------|
-| Supun Gimres | 22CDS0421 | Cloud Infrastructure & Automation  |
-| Sachindu Teekshana | 22CDS0409 | Data Science & Machine Learning  |
-| Kavisha Nimsara | 22CDS0425 | Data Analytics & Business Insights  |
-| Savindi Hewage | 22CDS0418 | Project Manager, Documentation & Integration |
+| Name | Role |
+|------|------|
+| Supun Gimres | Cloud Infrastructure & Automation  |
+| Sachindu Teekshana | Data Science & Machine Learning  |
+| Kavisha Nimsara | Data Analytics & Business Insights  |
+| Savindi Hewage | Project Manager, Documentation & Integration |
 
 ## 🏗️ AWS Architecture
 
