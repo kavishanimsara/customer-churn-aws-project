@@ -1,0 +1,141 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: uv run python -m customer_churn_aws_project.stages preprocess
+    deps:
+    - path: data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+      hash: md5
+      md5: 3b0bfab28a8101b4e4fdd08025a5c235
+      size: 970457
+    - path: src/customer_churn_aws_project
+      hash: md5
+      md5: 3cc746f2f7ed5cc64612417bf71ac07b.dir
+      size: 35798
+      nfiles: 8
+    params:
+      params.yaml:
+        preprocess.output: data/processed/cleaned_customer_data.csv
+        preprocess.raw_data: data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+        random_state: 42
+    outs:
+    - path: data/processed/cleaned_customer_data.csv
+      hash: md5
+      md5: 634c8c71e830ed12812df331e6b61cf5
+      size: 970164
+  eda:
+    cmd: uv run python -m customer_churn_aws_project.stages eda
+    deps:
+    - path: data/processed/cleaned_customer_data.csv
+      hash: md5
+      md5: 634c8c71e830ed12812df331e6b61cf5
+      size: 970164
+    - path: src/customer_churn_aws_project
+      hash: md5
+      md5: 3cc746f2f7ed5cc64612417bf71ac07b.dir
+      size: 35798
+      nfiles: 8
+    outs:
+    - path: reports/figures/eda
+      hash: md5
+      md5: afdb49bc9e07342acb717ecb78ebd1db.dir
+      size: 492650
+      nfiles: 7
+  train:
+    cmd: uv run python -m customer_churn_aws_project.stages train
+    deps:
+    - path: data/processed/cleaned_customer_data.csv
+      hash: md5
+      md5: 634c8c71e830ed12812df331e6b61cf5
+      size: 970164
+    - path: src/customer_churn_aws_project
+      hash: md5
+      md5: 3cc746f2f7ed5cc64612417bf71ac07b.dir
+      size: 35798
+      nfiles: 8
+    params:
+      params.yaml:
+        features.test_size: 0.2
+        random_state: 42
+        train.models:
+          Logistic Regression (Balanced):
+            estimator: logistic_regression
+            class_weight: balanced
+            max_iter: 1000
+          Random Forest (Balanced):
+            estimator: random_forest
+            class_weight: balanced
+            n_estimators: 150
+            max_depth: 7
+            min_samples_split: 10
+          XGBoost (Balanced):
+            estimator: xgboost
+            n_estimators: 100
+            max_depth: 4
+            learning_rate: 0.08
+            eval_metric: logloss
+          Logistic Regression (Default):
+            estimator: logistic_regression
+            max_iter: 1000
+          Random Forest (Default):
+            estimator: random_forest
+            n_estimators: 150
+            max_depth: 7
+            min_samples_split: 10
+          SVM:
+            estimator: svm
+            class_weight: balanced
+            probability: true
+          CatBoost:
+            estimator: catboost
+            optional: true
+            iterations: 200
+            depth: 5
+            learning_rate: 0.05
+            loss_function: Logloss
+            eval_metric: AUC
+            verbose: 0
+          KNN:
+            estimator: knn
+            n_neighbors: 15
+            weights: distance
+            metric: minkowski
+          MLP:
+            estimator: mlp
+            hidden_layer_sizes:
+            - 64
+            - 32
+            activation: relu
+            solver: adam
+            alpha: 0.0001
+            learning_rate_init: 0.001
+            max_iter: 500
+            early_stopping: true
+            validation_fraction: 0.1
+        train.primary_metric: F1-Score
+        train.secondary_metric: ROC-AUC
+    outs:
+    - path: models/best_churn_model.pkl
+      hash: md5
+      md5: 4827bea0a63830d22e2ebd2cba770fc6
+      size: 2215026
+    - path: models/best_churn_model_bundle.pkl
+      hash: md5
+      md5: 51ac3acff7106d14a83b1f43d1f7335c
+      size: 2215267
+    - path: reports/confusion_matrix.json
+      hash: md5
+      md5: 021513fa00a81e6d2f3d01044f6ead4b
+      size: 43617
+    - path: reports/figures/model
+      hash: md5
+      md5: 748d264c42144b8ccead68d5bc3e8da7.dir
+      size: 202382
+      nfiles: 3
+    - path: reports/metrics.json
+      hash: md5
+      md5: 4e333a8831f3b8d8ed06a862554c4683
+      size: 2039
+    - path: reports/roc_curve.json
+      hash: md5
+      md5: 148b882d3545994fa97d64cf08101d4f
+      size: 27430
