@@ -99,3 +99,38 @@ Then pull the tracked data:
 ```bash
 dvc pull
 ```
+
+## Dashboard
+
+A FastAPI server with a Gradio UI mounted at `/`. It serves the best model saved by the `train` stage (`models/best_churn_model_bundle.pkl`), so run the pipeline (or `dvc pull`) first.
+
+```bash
+uv sync --extra dashboard
+uv run churn-dashboard          # http://localhost:8000
+```
+
+- UI: `http://localhost:8000/` (Predict, Model performance, Figures tabs)
+- API docs: `http://localhost:8000/docs`
+- Endpoints: `GET /health`, `GET /api/model/info`, `GET /api/model/options`, `GET /api/metrics`, `GET /api/figures`, `GET /figures/{category}/{name}`, `POST /api/predict`
+
+## Docker
+
+The image contains only what the dashboard needs at runtime. Build from the repository root:
+
+```bash
+docker build -f docker/Dockerfile -t churn-dashboard .
+docker run --rm -p 8000:8000 churn-dashboard
+curl -s localhost:8000/health
+```
+
+The image installs only the serving dependencies from `docker/requirements-server.txt` (pinned, compiled from `docker/requirements-server.in`), so the training-only libraries such as xgboost, matplotlib, seaborn and boto3 are not included. Local development still uses the full environment from `uv sync --extra dashboard`.
+
+To update the image's pins after changing `docker/requirements-server.in`:
+
+```bash
+uv pip compile docker/requirements-server.in --python-version 3.14 --no-header -o docker/requirements-server.txt
+```
+
+The image is built from the bundled model. If the best model is ever retrained to XGBoost, add `xgboost` to `docker/requirements-server.in` and regenerate the lock.
+
+The build context is limited by `docker/Dockerfile.dockerignore` (BuildKit picks it up automatically). Podman users should add `--format docker` so the `HEALTHCHECK` is kept.
