@@ -17,6 +17,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.metrics import confusion_matrix, roc_curve
 
 from .features import get_encoded_feature_names
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 sns.set_theme(style="whitegrid")
 
@@ -26,6 +29,7 @@ def _save(fig: plt.Figure, out_dir: Path, filename: str) -> Path:
     path = out_dir / filename
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
+    logger.debug("Saved figure: %s", path)
     return path
 
 
@@ -279,6 +283,9 @@ def plot_eda(df: pd.DataFrame, out_dir: Path) -> dict[str, float | str]:
     paths.append(plot_churn_by_internet_and_support(df, overall_churn_pct, out_dir))
     paths.append(plot_correlation_and_tenure(df, out_dir))
 
+    logger.info(
+        "Saved %d EDA figure(s) to %s", len(paths), out_dir
+    )
     return {
         "overall_churn_pct": overall_churn_pct,
         "n_rows": len(df),
@@ -347,6 +354,11 @@ def plot_feature_importance(
     elif hasattr(clf, "coef_"):
         importances = np.abs(np.asarray(clf.coef_)).ravel()
     else:
+        logger.warning(
+            "Model '%s' exposes neither feature_importances_ nor coef_; "
+            "skipping the feature-importance plot",
+            type(clf).__name__,
+        )
         return Path()
 
     series = pd.Series(importances, index=names).sort_values(ascending=False).head(top_n)

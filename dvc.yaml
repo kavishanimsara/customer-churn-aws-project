@@ -1,5 +1,6 @@
 stages:
   preprocess:
+    desc: "Load the raw Telco CSV, coerce/clean it and write the cleaned dataset."
     cmd: uv run python -m customer_churn_aws_project.stages preprocess
     deps:
       - src/customer_churn_aws_project
@@ -12,6 +13,7 @@ stages:
       - data/processed/cleaned_customer_data.csv
 
   eda:
+    desc: "Generate EDA figures from the cleaned dataset."
     cmd: uv run python -m customer_churn_aws_project.stages eda
     deps:
       - src/customer_churn_aws_project
@@ -20,6 +22,7 @@ stages:
       - reports/figures/eda
 
   train:
+    desc: "Train/rank candidate models and persist the best model, metrics and plots."
     cmd: uv run python -m customer_churn_aws_project.stages train
     deps:
       - src/customer_churn_aws_project
@@ -47,3 +50,4 @@ stages:
           template: confusion
           x: actual
           y: predicted
+

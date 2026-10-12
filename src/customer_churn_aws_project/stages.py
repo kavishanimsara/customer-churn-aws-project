@@ -4,12 +4,17 @@ Each stage reads ``params.yaml`` and writes the outputs declared in
 ``dvc.yaml``. Run a single stage with::
 
     uv run python -m customer_churn_aws_project.stages <stage>
+
+Logs are written to stdout in a human-readable format (see
+``logging_config``). Control verbosity with ``--log-level`` or the
+``CHURN_LOG_LEVEL`` environment variable.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import time
 import warnings
 from pathlib import Path
 from typing import Any
@@ -29,6 +34,7 @@ from .features import (
     get_feature_lists,
     split_data,
 )
+from .logging_config import LOGGER_NAME, configure_logging, get_logger
 from .models import (
     evaluate_models,
     get_candidate_models,
@@ -43,6 +49,9 @@ from .plots import (
     plot_feature_importance,
     plot_roc_curve,
 )
+
+logger = get_logger(f"{LOGGER_NAME}.stages")
+
 
 
 def load_params(path: str | Path = config.PARAMS_PATH) -> dict[str, Any]:
@@ -63,22 +72,20 @@ def preprocess(params: dict[str, Any]) -> None:
     raw_path = _resolve(params["preprocess"].get("raw_data", config.RAW_DATA_PATH))
     out_path = _resolve(params["preprocess"].get("output", config.CLEANED_DATA_PATH))
 
+    logger.info("Preprocessing %s -> %s", raw_path, out_path)
     df_raw = load_raw_data(raw_path)
     df_clean = clean_data(df_raw)
     save_data(df_clean, out_path)
 
-    print(
-        f"Cleaned dataset saved to {out_path}: "
-        f"{df_clean.shape[0]} rows, {df_clean.shape[1]} columns."
-    )
-
 
 def eda(params: dict[str, Any]) -> None:
+    logger.info("Generating EDA figures into %s", config.EDA_FIGURES_DIR)
     df = add_churn_flags(load_cleaned_data())
     summary = plot_eda(df, config.EDA_FIGURES_DIR)
-    print(
-        f"EDA complete: {len(summary['figures'])} figures written to "
-        f"{config.EDA_FIGURES_DIR} (overall churn {summary['overall_churn_pct']:.2f}%)."
+    logger.info(
+        "Overall churn rate: %.2f%% (%d customers)",
+        summary["overall_churn_pct"],
+        summary["n_rows"],
     )
 
 
@@ -89,9 +96,23 @@ def train(params: dict[str, Any]) -> None:
     primary_metric = train_params["primary_metric"]
     secondary_metric = train_params["secondary_metric"]
 
+    logger.info(
+        "Training config: test_size=%.2f random_state=%d primary_metric=%s "
+        "secondary_metric=%s",
+        test_size,
+        random_state,
+        primary_metric,
+        secondary_metric,
+    )
+
     df = add_churn_flags(load_cleaned_data())
     X, y, customer_ids = build_features(df)
     num_features, cat_features = get_feature_lists(X)
+    logger.info(
+        "Using %d numerical and %d categorical feature(s)",
+        len(num_features),
+        len(cat_features),
+    )
 
     X_train, X_test, y_train, y_test, _, _ = split_data(
         X, y, customer_ids, test_size=test_size, random_state=random_state
@@ -99,7 +120,10 @@ def train(params: dict[str, Any]) -> None:
 
     preprocessor = build_preprocessor(num_features, cat_features)
     preprocessor.fit(X_train)
-    print(f"Total encoded features: {len(get_encoded_feature_names(preprocessor, num_features, cat_features))}")
+    encoded_names = get_encoded_feature_names(
+        preprocessor, num_features, cat_features
+    )
+    logger.info("Total encoded features: %d", len(encoded_names))
 
     candidates = get_candidate_models(
         build_preprocessor(num_features, cat_features),
@@ -109,12 +133,22 @@ def train(params: dict[str, Any]) -> None:
     train_models(candidates, X_train, y_train)
     results = evaluate_models(candidates, X_test, y_test)
 
+    ranked = results.sort_values(
+        by=[primary_metric, secondary_metric], ascending=[False, False]
+    )
+    logger.info(
+        "Model comparison (ranked by %s, then %s):\n%s",
+        primary_metric,
+        secondary_metric,
+        ranked.round(4).to_string(),
+    )
+
     best_name, best_metrics = select_best(results, primary_metric, secondary_metric)
     best_model = candidates[best_name]
 
     # Persist model + bundle
     model_path = save_model(best_model, config.MODELS_DIR / "best_churn_model.pkl")
-    save_model_bundle(
+    bundle_path = save_model_bundle(
         {
             "model": best_model,
             "model_name": best_name,
@@ -168,9 +202,15 @@ def train(params: dict[str, Any]) -> None:
     }
     config.METRICS_PATH.write_text(json.dumps(metrics, indent=2))
 
-    print(f"Best model: {best_name}")
-    print(f"Saved model to {model_path}")
-    print(f"Metrics written to {config.METRICS_PATH}")
+    logger.info("Best model: %s", best_name)
+    logger.info(
+        "Test metrics: %s",
+        ", ".join(f"{name}={value:.4f}" for name, value in best_metrics.items()),
+    )
+    logger.info("Saved model to %s", model_path)
+    logger.info("Saved model bundle to %s", bundle_path)
+    logger.info("Saved metrics to %s", config.METRICS_PATH)
+    logger.info("Saved model figures to %s", config.MODEL_FIGURES_DIR)
 
 
 STAGES = {"preprocess": preprocess, "eda": eda, "train": train}
@@ -184,10 +224,27 @@ def main(argv: list[str] | None = None) -> None:
         default=str(config.PARAMS_PATH),
         help="path to params.yaml",
     )
+    parser.add_argument(
+        "--log-level",
+        default=None,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="console log verbosity (default: INFO, or $CHURN_LOG_LEVEL)",
+    )
     args = parser.parse_args(argv)
 
+    configure_logging(args.log_level)
+
+    logger.info("=== Stage '%s' started ===", args.stage)
+    start = time.perf_counter()
     params = load_params(args.params)
-    STAGES[args.stage](params)
+    try:
+        STAGES[args.stage](params)
+    except Exception:
+        logger.exception("=== Stage '%s' failed ===", args.stage)
+        raise
+    logger.info(
+        "=== Stage '%s' finished in %.2fs ===", args.stage, time.perf_counter() - start
+    )
 
 
 if __name__ == "__main__":

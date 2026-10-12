@@ -9,9 +9,9 @@ stages:
       size: 970457
     - path: src/customer_churn_aws_project
       hash: md5
-      md5: 0bce5654dffd507adc66aef0e29d2c36.dir
-      size: 28876
-      nfiles: 7
+      md5: 3cc746f2f7ed5cc64612417bf71ac07b.dir
+      size: 35798
+      nfiles: 8
     params:
       params.yaml:
         preprocess.output: data/processed/cleaned_customer_data.csv
@@ -31,9 +31,9 @@ stages:
       size: 970164
     - path: src/customer_churn_aws_project
       hash: md5
-      md5: 0bce5654dffd507adc66aef0e29d2c36.dir
-      size: 28876
-      nfiles: 7
+      md5: 3cc746f2f7ed5cc64612417bf71ac07b.dir
+      size: 35798
+      nfiles: 8
     outs:
     - path: reports/figures/eda
       hash: md5
@@ -49,9 +49,9 @@ stages:
       size: 970164
     - path: src/customer_churn_aws_project
       hash: md5
-      md5: 0bce5654dffd507adc66aef0e29d2c36.dir
-      size: 28876
-      nfiles: 7
+      md5: 3cc746f2f7ed5cc64612417bf71ac07b.dir
+      size: 35798
+      nfiles: 8
     params:
       params.yaml:
         features.test_size: 0.2
@@ -120,7 +120,7 @@ stages:
       size: 2215026
     - path: models/best_churn_model_bundle.pkl
       hash: md5
-      md5: ed469eb853dce31fa9886d79311e7741
+      md5: 51ac3acff7106d14a83b1f43d1f7335c
       size: 2215267
     - path: reports/confusion_matrix.json
       hash: md5

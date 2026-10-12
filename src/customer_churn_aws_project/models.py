@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
+
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def _build_estimator(
@@ -70,11 +75,16 @@ def get_candidate_models(
             estimator = _build_estimator(kind, cfg, random_state)
         except ImportError:
             if optional:
+                logger.info(
+                    "Skipping optional model '%s' (dependency not installed)", name
+                )
                 continue
             raise
 
         candidates[name] = Pipeline([("prep", preprocessor), ("clf", estimator)])
 
+    logger.info("Prepared %d candidate model(s)", len(candidates))
+    logger.debug("Candidate models: %s", list(candidates))
     return candidates
 
 
@@ -82,8 +92,12 @@ def train_models(
     candidates: dict[str, Pipeline], X_train: pd.DataFrame, y_train: pd.Series
 ) -> dict[str, Pipeline]:
     """Fit every candidate pipeline in place and return them."""
-    for pipe in candidates.values():
+    for name, pipe in candidates.items():
+        start = time.perf_counter()
         pipe.fit(X_train, y_train)
+        logger.info(
+            "Fitted %-35s in %5.2fs", name, time.perf_counter() - start
+        )
     return candidates
 
 
@@ -95,13 +109,21 @@ def evaluate_models(
     for name, pipe in candidates.items():
         y_pred = pipe.predict(X_test)
         y_proba = pipe.predict_proba(X_test)[:, 1]
-        results[name] = {
+        row = {
             "Accuracy": accuracy_score(y_test, y_pred),
             "Precision": precision_score(y_test, y_pred),
             "Recall": recall_score(y_test, y_pred),
             "F1-Score": f1_score(y_test, y_pred),
             "ROC-AUC": roc_auc_score(y_test, y_proba),
         }
+        results[name] = row
+        logger.info(
+            "Evaluated %-35s accuracy=%.4f f1=%.4f roc_auc=%.4f",
+            name,
+            row["Accuracy"],
+            row["F1-Score"],
+            row["ROC-AUC"],
+        )
     return pd.DataFrame(results).T
 
 
@@ -113,6 +135,12 @@ def select_best(
         by=[primary_metric, secondary_metric], ascending=[False, False]
     )
     best_name = ranked.index[0]
+    logger.debug(
+        "Ranked by ['%s', '%s']; winner is '%s'",
+        primary_metric,
+        secondary_metric,
+        best_name,
+    )
     return best_name, results.loc[best_name]
 
 
@@ -123,6 +151,7 @@ def save_model(
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, path)
+    logger.debug("Persisted model to %s", path)
     return path
 
 
@@ -131,4 +160,6 @@ def save_model_bundle(bundle: dict[str, Any], path: str | Path) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(bundle, path)
+    logger.debug("Persisted model bundle to %s", path)
     return path
+
