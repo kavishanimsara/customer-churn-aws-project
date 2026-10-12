@@ -1,0 +1,49 @@
+stages:
+  preprocess:
+    cmd: uv run python -m customer_churn_aws_project.stages preprocess
+    deps:
+      - src/customer_churn_aws_project
+      - data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+    params:
+      - random_state
+      - preprocess.raw_data
+      - preprocess.output
+    outs:
+      - data/processed/cleaned_customer_data.csv
+
+  eda:
+    cmd: uv run python -m customer_churn_aws_project.stages eda
+    deps:
+      - src/customer_churn_aws_project
+      - data/processed/cleaned_customer_data.csv
+    outs:
+      - reports/figures/eda
+
+  train:
+    cmd: uv run python -m customer_churn_aws_project.stages train
+    deps:
+      - src/customer_churn_aws_project
+      - data/processed/cleaned_customer_data.csv
+    params:
+      - random_state
+      - features.test_size
+      - train.primary_metric
+      - train.secondary_metric
+      - train.models
+    outs:
+      - models/best_churn_model.pkl
+      - models/best_churn_model_bundle.pkl
+      - reports/figures/model
+    metrics:
+      - reports/metrics.json:
+          cache: false
+    plots:
+      - reports/roc_curve.json:
+          cache: false
+          x: fpr
+          y: tpr
+      - reports/confusion_matrix.json:
+          cache: false
+          template: confusion
+          x: actual
+          y: predicted

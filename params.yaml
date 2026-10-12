@@ -1,0 +1,70 @@
+# Parameters for the customer-churn DVC pipeline.
+# Extracted from notebooks 01-preprocess.ipynb and 02-customer_churn_pipeline.ipynb.
+
+random_state: 42
+
+preprocess:
+  raw_data: data/raw/WA_Fn-UseC_-Telco-Customer-Churn.csv
+  output: data/processed/cleaned_customer_data.csv
+
+features:
+  test_size: 0.20
+
+train:
+  # Ranking: primary metric first, then secondary metric (both descending).
+  primary_metric: F1-Score
+  secondary_metric: ROC-AUC
+
+  models:
+    "Logistic Regression (Balanced)":
+      estimator: logistic_regression
+      class_weight: balanced
+      max_iter: 1000
+    "Random Forest (Balanced)":
+      estimator: random_forest
+      class_weight: balanced
+      n_estimators: 150
+      max_depth: 7
+      min_samples_split: 10
+    "XGBoost (Balanced)":
+      estimator: xgboost
+      n_estimators: 100
+      max_depth: 4
+      learning_rate: 0.08
+      eval_metric: logloss
+    "Logistic Regression (Default)":
+      estimator: logistic_regression
+      max_iter: 1000
+    "Random Forest (Default)":
+      estimator: random_forest
+      n_estimators: 150
+      max_depth: 7
+      min_samples_split: 10
+    "SVM":
+      estimator: svm
+      class_weight: balanced
+      probability: true
+    "CatBoost":
+      estimator: catboost
+      optional: true
+      iterations: 200
+      depth: 5
+      learning_rate: 0.05
+      loss_function: Logloss
+      eval_metric: AUC
+      verbose: 0
+    "KNN":
+      estimator: knn
+      n_neighbors: 15
+      weights: distance
+      metric: minkowski
+    "MLP":
+      estimator: mlp
+      hidden_layer_sizes: [64, 32]
+      activation: relu
+      solver: adam
+      alpha: 0.0001
+      learning_rate_init: 0.001
+      max_iter: 500
+      early_stopping: true
+      validation_fraction: 0.1
