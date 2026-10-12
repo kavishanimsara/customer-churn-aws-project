@@ -24,6 +24,8 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 EDA_FIGURES_DIR = FIGURES_DIR / "eda"
 MODEL_FIGURES_DIR = FIGURES_DIR / "model"
 
+MODEL_BUNDLE_PATH = MODELS_DIR / "best_churn_model_bundle.pkl"
+
 METRICS_PATH = REPORTS_DIR / "metrics.json"
 ROC_CURVE_PATH = REPORTS_DIR / "roc_curve.json"
 CONFUSION_MATRIX_PATH = REPORTS_DIR / "confusion_matrix.json"

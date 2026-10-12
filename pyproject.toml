@@ -20,8 +20,17 @@ dependencies = [
     "xgboost>=3.4.1",
 ]
 
+[project.optional-dependencies]
+dashboard = [
+    "fastapi>=0.115.0",
+    "gradio>=5.0.0",
+    "python-multipart>=0.0.9",
+    "uvicorn[standard]>=0.30.0",
+]
+
 [project.scripts]
 customer-churn-aws-project = "customer_churn_aws_project:main"
+churn-dashboard = "customer_churn_aws_project.dashboard.app:main"
 
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]
